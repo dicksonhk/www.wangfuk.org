@@ -48,33 +48,6 @@ class WebCrawler:
     # User agent for polite crawling
     USER_AGENT = "Mozilla/5.0 (compatible; ArchiveBot/1.0; +https://archive.org)"
 
-    # File extensions to download (in addition to HTML pages)
-    ASSET_EXTENSIONS = {
-        ".css",
-        ".js",
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".ico",
-        ".svg",
-        ".woff",
-        ".woff2",
-        ".ttf",
-        ".eot",
-        ".pdf",
-        ".doc",
-        ".docx",
-        ".xls",
-        ".xlsx",
-        ".zip",
-        ".mp3",
-        ".mp4",
-        ".avi",
-        ".wmv",
-        ".swf",
-    }
-
     def __init__(self, output_dir="./archive", max_depth=0, delay=1.0):
         """
         Initialize the crawler.

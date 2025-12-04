@@ -53,7 +53,7 @@ echo ""
 #   --level=inf: Unlimited recursion depth
 #   --page-requisites: Get all assets (images, CSS, JS)
 #   --convert-links: Convert links for offline viewing
-#   --adjust-extension: Add .html extension to HTML files
+#   --html-extension: Add .html extension to HTML files
 #   --domains: Limit to specified domain
 #   --no-parent: Don't ascend to parent directory
 #   --wait: Wait between requests (be polite)
