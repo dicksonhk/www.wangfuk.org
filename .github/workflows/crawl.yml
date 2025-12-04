@@ -30,7 +30,6 @@ jobs:
 
       - name: Run Zeno crawl
         run: |
-          mkdir -p crawl-output
           Zeno get url \
             --job wangfuk-crawl \
             --warc-prefix wangfuk \
@@ -45,7 +44,8 @@ jobs:
       - name: Convert WARC to WACZ
         run: |
           mkdir -p wacz-output
-          for warc in wangfuk-crawl/*.warc.gz; do
+          # Zeno outputs WARC files to jobs/{job-name}/ directory
+          for warc in jobs/wangfuk-crawl/*.warc.gz; do
             if [ -f "$warc" ]; then
               wacz create -o "wacz-output/$(basename "${warc%.warc.gz}").wacz" "$warc"
             fi
@@ -55,6 +55,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wangfuk-wacz-${{ github.run_id }}
-          path: wacz-output/*.wacz
+          path: wacz-output/
           if-no-files-found: warn
           retention-days: 90
