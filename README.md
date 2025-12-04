@@ -3,3 +3,13 @@ Archive of www.wangfuk.org
 
 ## Basic info
 Homepage: http://www.wangfuk.org:80/html/home/index.asp
+
+## Usage
+
+Crawl the website into a specified output directory:
+
+```bash
+./crawl.sh [output_directory]
+```
+
+If no output directory is specified, it defaults to `output/`.
