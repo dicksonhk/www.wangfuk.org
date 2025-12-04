@@ -1,0 +1,62 @@
+name: Crawl www.wangfuk.org
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install py-wacz
+        run: pip install wacz
+
+      - name: Download and setup Zeno
+        run: |
+          curl -L -o Zeno https://github.com/internetarchive/Zeno/releases/download/v2.0.18/Zeno-linux-amd64
+          chmod +x Zeno
+          sudo mv Zeno /usr/local/bin/
+
+      - name: Run Zeno crawl
+        run: |
+          Zeno get url \
+            --job wangfuk-crawl \
+            --warc-prefix wangfuk \
+            --workers 4 \
+            --max-hops 10 \
+            --include-host www.wangfuk.org \
+            --http-timeout 30s \
+            --max-retry 3 \
+            --crawl-time-limit 1800 \
+            http://www.wangfuk.org:80/html/home/index.asp
+
+      - name: Convert WARC to WACZ
+        run: |
+          mkdir -p wacz-output
+          # Zeno outputs WARC files to jobs/{job-name}/ directory
+          for warc in jobs/wangfuk-crawl/*.warc.gz; do
+            if [ -f "$warc" ]; then
+              wacz create -o "wacz-output/$(basename "${warc%.warc.gz}").wacz" "$warc"
+            fi
+          done
+
+      - name: Upload WACZ artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wangfuk-wacz-${{ github.run_id }}
+          path: wacz-output/
+          if-no-files-found: warn
+          retention-days: 90
