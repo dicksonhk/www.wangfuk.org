@@ -86,3 +86,41 @@ WARC files preserve:
 - Response bodies (HTML, images, CSS, JS, etc.)
 - Request/response metadata
 - Timestamps
+
+## Automated Crawling with GitHub Actions
+
+This repository includes a GitHub Actions workflow that automatically crawls the website and uploads the archive as artifacts.
+
+### Manual Execution
+
+To manually trigger the crawler workflow:
+
+1. Go to the **Actions** tab in the GitHub repository
+2. Select the **Crawl and Archive Website** workflow
+3. Click **Run workflow**
+4. Optionally configure:
+   - **Max depth**: Maximum crawl depth (0 for unlimited)
+   - **Delay**: Delay between requests in seconds
+5. Click **Run workflow** to start
+
+### Scheduled Execution
+
+The workflow automatically runs every Sunday at 2 AM UTC to create weekly archives.
+
+### Workflow Outputs
+
+The workflow generates three types of artifacts:
+
+1. **WARC Archive** (`warc-archive-*`): The compressed WARC file containing all crawled content
+2. **CDX Index** (`cdx-index-*`): Index file for the WARC archive
+3. **Crawl Log** (`crawl-log-*`): Detailed log of the crawling process
+4. **Complete Archive** (`complete-archive-*`): Bundle containing all files above
+
+All artifacts are retained for 90 days (logs for 30 days) and can be downloaded from the workflow run page.
+
+### Downloading Artifacts
+
+1. Go to the **Actions** tab
+2. Click on a completed workflow run
+3. Scroll to the **Artifacts** section at the bottom
+4. Click on an artifact to download it

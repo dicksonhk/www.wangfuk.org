@@ -1,0 +1,115 @@
+name: Crawl and Archive Website
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      max_depth:
+        description: 'Maximum crawl depth (0 for unlimited)'
+        required: false
+        default: '0'
+        type: string
+      delay:
+        description: 'Delay between requests in seconds'
+        required: false
+        default: '1.0'
+        type: string
+  
+  # Scheduled run - runs weekly on Sundays at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 0'
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Create archive directory
+        run: mkdir -p archive
+      
+      - name: Run crawler
+        env:
+          MAX_DEPTH: ${{ github.event.inputs.max_depth || '0' }}
+          DELAY: ${{ github.event.inputs.delay || '1.0' }}
+        run: |
+          echo "Starting crawl with max_depth=${MAX_DEPTH}, delay=${DELAY}"
+          python crawl.py \
+            --output-dir ./archive \
+            --max-depth "${MAX_DEPTH}" \
+            --delay "${DELAY}"
+      
+      - name: List generated files
+        run: |
+          echo "Generated files:"
+          ls -lh archive/
+          echo ""
+          echo "File sizes:"
+          du -h archive/*.warc.gz archive/*.cdx archive/*.log
+      
+      - name: Create summary
+        run: |
+          echo "## Crawl Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Generated Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          
+          for file in archive/*; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              size=$(du -h "$file" | cut -f1)
+              echo "| $filename | $size |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Log Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -20 archive/*.log >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload WARC archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: warc-archive-${{ github.run_number }}
+          path: archive/*.warc.gz
+          retention-days: 90
+          compression-level: 0  # Already compressed
+      
+      - name: Upload CDX index
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdx-index-${{ github.run_number }}
+          path: archive/*.cdx
+          retention-days: 90
+      
+      - name: Upload log file
+        uses: actions/upload-artifact@v4
+        with:
+          name: crawl-log-${{ github.run_number }}
+          path: archive/*.log
+          retention-days: 30
+      
+      - name: Upload all artifacts as bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-archive-${{ github.run_number }}
+          path: archive/
+          retention-days: 90
