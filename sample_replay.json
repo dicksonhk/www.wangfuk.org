@@ -1,0 +1,103 @@
+{
+  "collection": {
+    "id": "a483ba90-1e46-462b-aa09-e91c2876bd0f",
+    "name": "www-wangfuk-org",
+    "description": "Archive of www.wangfuk.org website",
+    "created": "2025-12-04T12:00:00Z"
+  },
+  "metadata": {
+    "tool": "browsertrix-crawler",
+    "version": "1.2.0",
+    "crawl_start": "2025-12-04T12:30:00Z",
+    "crawl_end": "2025-12-04T12:45:00Z",
+    "seed_url": "http://www.wangfuk.org:80/html/home/index.asp"
+  },
+  "pages": [
+    {
+      "url": "http://www.wangfuk.org:80/html/home/index.asp",
+      "title": "Wang Fuk - Home",
+      "timestamp": "20251204123000",
+      "ts": "2025-12-04T12:30:00Z",
+      "status": 200,
+      "mime": "text/html",
+      "size": 15230,
+      "text": "Welcome to Wang Fuk homepage..."
+    },
+    {
+      "url": "http://www.wangfuk.org:80/html/about/index.asp",
+      "title": "Wang Fuk - About",
+      "timestamp": "20251204123045",
+      "ts": "2025-12-04T12:30:45Z",
+      "status": 200,
+      "mime": "text/html",
+      "size": 12450,
+      "text": "About Wang Fuk organization..."
+    },
+    {
+      "url": "http://www.wangfuk.org:80/html/contact/index.asp",
+      "title": "Wang Fuk - Contact",
+      "timestamp": "20251204123130",
+      "ts": "2025-12-04T12:31:30Z",
+      "status": 200,
+      "mime": "text/html",
+      "size": 8920,
+      "text": "Contact information..."
+    },
+    {
+      "url": "http://www.wangfuk.org:80/documents/annual_report_2024.pdf",
+      "timestamp": "20251204123200",
+      "ts": "2025-12-04T12:32:00Z",
+      "status": 200,
+      "mime": "application/pdf",
+      "size": 2458300
+    },
+    {
+      "url": "http://www.wangfuk.org:80/documents/guidelines_2024.pdf",
+      "timestamp": "20251204123245",
+      "ts": "2025-12-04T12:32:45Z",
+      "status": 200,
+      "mime": "application/pdf",
+      "size": 1875640
+    },
+    {
+      "url": "http://www.wangfuk.org:80/images/logo.png",
+      "timestamp": "20251204123330",
+      "ts": "2025-12-04T12:33:30Z",
+      "status": 200,
+      "mime": "image/png",
+      "size": 45230
+    },
+    {
+      "url": "http://www.wangfuk.org:80/images/banner.jpg",
+      "timestamp": "20251204123345",
+      "ts": "2025-12-04T12:33:45Z",
+      "status": 200,
+      "mime": "image/jpeg",
+      "size": 125680
+    },
+    {
+      "url": "http://www.wangfuk.org:80/css/style.css",
+      "timestamp": "20251204123400",
+      "ts": "2025-12-04T12:34:00Z",
+      "status": 200,
+      "mime": "text/css",
+      "size": 8450
+    },
+    {
+      "url": "http://www.wangfuk.org:80/js/main.js",
+      "timestamp": "20251204123415",
+      "ts": "2025-12-04T12:34:15Z",
+      "status": 200,
+      "mime": "application/javascript",
+      "size": 15670
+    },
+    {
+      "url": "http://www.wangfuk.org:80/old-page.html",
+      "timestamp": "20251204123430",
+      "ts": "2025-12-04T12:34:30Z",
+      "status": 404,
+      "mime": "text/html",
+      "size": 1024
+    }
+  ]
+}
