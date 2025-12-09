@@ -1,0 +1,7 @@
+# Requirements for the www.wangfuk.org web crawler
+# Install with: pip install -r requirements.txt
+
+warcio>=1.7.4
+requests>=2.28.0
+beautifulsoup4>=4.11.0
+lxml>=4.9.0
