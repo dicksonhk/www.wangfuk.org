@@ -25,7 +25,8 @@ wheels/
 
 # Analysis outputs (exclude temporary analysis files)
 sample_analysis_output.txt
-browsertrix_analysis.txt
+browsertrix_*.txt
+browsertrix_*.json
 analysis.json
 
 # IDE

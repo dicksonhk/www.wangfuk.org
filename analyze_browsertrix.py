@@ -26,11 +26,13 @@ import requests
 class BrowsertrixAnalyzer:
     """Analyzes Browsertrix crawl data from replay.json endpoint."""
 
-    def __init__(self, url):
+    def __init__(self, url, fetch_pages=False):
         """Initialize with replay.json URL."""
         self.url = url
         self.data = None
         self.analysis = {}
+        self.fetch_pages = fetch_pages
+        self.pages_data = []
 
     def fetch_data(self):
         """Fetch data from the Browsertrix replay.json endpoint."""
@@ -72,8 +74,57 @@ class BrowsertrixAnalyzer:
             print(f"✗ Error fetching data: {e}")
             return False
 
+    def fetch_all_pages(self):
+        """Fetch all pages from the pagesQueryUrl if available."""
+        if not self.data or not self.fetch_pages:
+            return False
+        
+        pages_url = self.data.get('pagesQueryUrl')
+        if not pages_url:
+            print("ℹ No pagesQueryUrl found in collection metadata")
+            return False
+        
+        print(f"Fetching page list from: {pages_url}")
+        all_pages = []
+        page_num = 1
+        page_size = 100
+        
+        try:
+            while True:
+                url = f"{pages_url}?page={page_num}&pageSize={page_size}"
+                response = requests.get(url, timeout=30)
+                response.raise_for_status()
+                
+                data = response.json()
+                items = data.get('items', [])
+                
+                # Stop if no items returned
+                if not items:
+                    break
+                
+                all_pages.extend(items)
+                print(f"  Fetched page {page_num} ({len(items)} items, total so far: {len(all_pages)})")
+                
+                # If we got fewer items than page_size, we've reached the end
+                if len(items) < page_size:
+                    break
+                
+                page_num += 1
+            
+            self.pages_data = all_pages
+            print(f"✓ Successfully fetched {len(all_pages)} pages")
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            print(f"✗ Error fetching pages: {e}")
+            return False
+
     def parse_pages(self):
         """Parse page data from the replay.json structure."""
+        # If we fetched pages separately, use that data
+        if self.pages_data:
+            return self.pages_data
+        
         if not self.data:
             return []
         
@@ -291,6 +342,11 @@ def main():
         action='store_true',
         help='Print report to stdout instead of saving to file'
     )
+    parser.add_argument(
+        '--fetch-pages',
+        action='store_true',
+        help='Fetch complete page list from pagesQueryUrl for detailed analysis'
+    )
     
     args = parser.parse_args()
     
@@ -304,7 +360,7 @@ def main():
         parser.error("Either provide URL directly or use --org and --collection")
     
     # Create analyzer and fetch data
-    analyzer = BrowsertrixAnalyzer(url)
+    analyzer = BrowsertrixAnalyzer(url, fetch_pages=args.fetch_pages)
     
     if not analyzer.fetch_data():
         print("\n" + "=" * 80)
@@ -339,6 +395,10 @@ def main():
         print("- You have the correct API endpoint URL")
         print("- You have necessary authentication if required")
         sys.exit(1)
+    
+    # Fetch all pages if requested
+    if args.fetch_pages:
+        analyzer.fetch_all_pages()
     
     # Perform analysis
     if not analyzer.analyze():
