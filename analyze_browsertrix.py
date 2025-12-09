@@ -76,7 +76,11 @@ class BrowsertrixAnalyzer:
 
     def fetch_all_pages(self):
         """Fetch all pages from the pagesQueryUrl if available."""
-        if not self.data or not self.fetch_pages:
+        # Return True if not requested - not an error condition
+        if not self.fetch_pages:
+            return True
+        
+        if not self.data:
             return False
         
         pages_url = self.data.get('pagesQueryUrl')
@@ -88,9 +92,10 @@ class BrowsertrixAnalyzer:
         all_pages = []
         page_num = 1
         page_size = 100
+        max_pages = 1000  # Safety limit to prevent infinite loops
         
         try:
-            while True:
+            while page_num <= max_pages:
                 url = f"{pages_url}?page={page_num}&pageSize={page_size}"
                 response = requests.get(url, timeout=30)
                 response.raise_for_status()
@@ -110,6 +115,9 @@ class BrowsertrixAnalyzer:
                     break
                 
                 page_num += 1
+            
+            if page_num > max_pages:
+                print(f"⚠ Reached maximum page limit ({max_pages}), stopping pagination")
             
             self.pages_data = all_pages
             print(f"✓ Successfully fetched {len(all_pages)} pages")
