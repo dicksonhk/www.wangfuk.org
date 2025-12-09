@@ -19,6 +19,8 @@ Output:
 import argparse
 import gzip
 import hashlib
+import io
+import logging
 import os
 import re
 import sys
@@ -76,9 +78,36 @@ class WebCrawler:
         self.cdx_filename = os.path.join(
             output_dir, f"www.wangfuk.org-{timestamp}.cdx"
         )
+        self.log_filename = os.path.join(
+            output_dir, f"www.wangfuk.org-{timestamp}.log"
+        )
 
-        print(f"Output WARC: {self.warc_filename}")
-        print(f"Output CDX:  {self.cdx_filename}")
+        # Set up logging
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+        
+        # File handler for detailed logging
+        file_handler = logging.FileHandler(self.log_filename)
+        file_handler.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(file_formatter)
+        
+        # Console handler for user-friendly output
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter('%(message)s')
+        console_handler.setFormatter(console_formatter)
+        
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
+
+        self.logger.info(f"Output WARC: {self.warc_filename}")
+        self.logger.info(f"Output CDX:  {self.cdx_filename}")
+        self.logger.info(f"Log file:    {self.log_filename}")
+        self.logger.debug(f"Crawler initialized with max_depth={max_depth}, delay={delay}s")
 
     def normalize_url(self, url):
         """Normalize URL for deduplication."""
@@ -152,17 +181,20 @@ class WebCrawler:
                     links.add(full_url)
 
         except Exception as e:
-            print(f"  Warning: Error parsing HTML: {e}")
+            self.logger.warning(f"Error parsing HTML: {e}")
 
+        self.logger.debug(f"Extracted {len(links)} links from {base_url}")
         return links
 
     def fetch_url(self, url):
         """Fetch a URL and return the response."""
+        self.logger.debug(f"Fetching URL: {url}")
         try:
             response = self.session.get(url, timeout=30, allow_redirects=True)
+            self.logger.debug(f"Response: {response.status_code} - {len(response.content)} bytes")
             return response
         except requests.RequestException as e:
-            print(f"  Error fetching {url}: {e}")
+            self.logger.error(f"Error fetching {url}: {e}")
             return None
 
     def write_warc_record(self, warc_writer, cdx_file, url, response):
@@ -189,10 +221,12 @@ class WebCrawler:
             record_id = f"<urn:uuid:{uuid.uuid4()}>"
 
             # Write response record
+            # Convert bytes to file-like object for warcio
+            payload_stream = io.BytesIO(response.content)
             record = warc_writer.create_warc_record(
                 uri=url,
                 record_type="response",
-                payload=response.content,
+                payload=payload_stream,
                 http_headers=status_and_headers,
             )
             warc_writer.write_record(record)
@@ -203,22 +237,25 @@ class WebCrawler:
             digest = hashlib.sha1(response.content).hexdigest()
             cdx_entry = f"{url} {warc_date} {response.status_code} {content_type} {content_length} {digest}\n"
             cdx_file.write(cdx_entry)
+            
+            self.logger.debug(f"Wrote WARC record: {url} ({content_length} bytes, {content_type})")
 
         except Exception as e:
-            print(f"  Error writing WARC record for {url}: {e}")
+            self.logger.error(f"Error writing WARC record for {url}: {e}")
 
     def crawl(self):
         """Run the crawler."""
-        print("\n" + "=" * 60)
-        print("Web Crawler for www.wangfuk.org")
-        print("=" * 60)
-        print(f"Start URL: {self.START_URL}")
-        print(f"Max Depth: {'Unlimited' if self.max_depth == 0 else self.max_depth}")
-        print(f"Delay: {self.delay}s between requests")
-        print("=" * 60 + "\n")
+        self.logger.info("\n" + "=" * 60)
+        self.logger.info("Web Crawler for www.wangfuk.org")
+        self.logger.info("=" * 60)
+        self.logger.info(f"Start URL: {self.START_URL}")
+        self.logger.info(f"Max Depth: {'Unlimited' if self.max_depth == 0 else self.max_depth}")
+        self.logger.info(f"Delay: {self.delay}s between requests")
+        self.logger.info("=" * 60 + "\n")
 
         # Initialize queue with start URL
         self.to_visit.append((self.START_URL, 0))
+        self.logger.debug(f"Added start URL to queue: {self.START_URL}")
 
         # Open WARC and CDX files
         with gzip.open(self.warc_filename, "wb") as warc_output:
@@ -234,40 +271,51 @@ class WebCrawler:
                 },
             )
             warc_writer.write_record(info_record)
+            self.logger.debug(f"Created WARC file: {self.warc_filename}")
 
             with open(self.cdx_filename, "w") as cdx_file:
                 # Write CDX header
                 cdx_file.write(
                     "!url !date !status !content-type !length !digest\n"
                 )
+                self.logger.debug(f"Created CDX file: {self.cdx_filename}")
 
                 # Process queue
                 crawled_count = 0
+                skipped_count = 0
+                error_count = 0
                 while self.to_visit:
                     url, depth = self.to_visit.pop(0)
 
                     # Normalize and check if already visited
                     normalized_url = self.normalize_url(url)
                     if normalized_url in self.visited:
+                        skipped_count += 1
+                        self.logger.debug(f"Skipping already visited URL: {url}")
                         continue
 
                     # Check depth limit
                     if self.max_depth > 0 and depth > self.max_depth:
+                        skipped_count += 1
+                        self.logger.debug(f"Skipping URL beyond max depth: {url} (depth={depth})")
                         continue
 
                     # Check if URL is allowed
                     if not self.is_allowed_url(url):
+                        skipped_count += 1
+                        self.logger.debug(f"Skipping URL outside allowed domain: {url}")
                         continue
 
                     # Mark as visited
                     self.visited.add(normalized_url)
                     crawled_count += 1
 
-                    print(f"[{crawled_count}] Crawling: {url}")
+                    self.logger.info(f"[{crawled_count}] Crawling (depth={depth}): {url}")
 
                     # Fetch URL
                     response = self.fetch_url(url)
                     if response is None:
+                        error_count += 1
                         continue
 
                     # Write WARC record
@@ -281,6 +329,7 @@ class WebCrawler:
                                 response.encoding or "utf-8", errors="replace"
                             )
                             links = self.extract_links(html, url)
+                            new_links = 0
                             for link in links:
                                 normalized_link = self.normalize_url(link)
                                 if (
@@ -288,28 +337,34 @@ class WebCrawler:
                                     and self.is_allowed_url(link)
                                 ):
                                     self.to_visit.append((link, depth + 1))
+                                    new_links += 1
+                            if new_links > 0:
+                                self.logger.debug(f"Added {new_links} new links to queue from {url}")
                         except Exception as e:
-                            print(f"  Warning: Error extracting links: {e}")
+                            self.logger.warning(f"Error extracting links from {url}: {e}")
 
                     # Be polite - wait between requests
                     if self.to_visit:
                         time.sleep(self.delay)
 
-        print("\n" + "=" * 60)
-        print("Crawl completed!")
-        print("=" * 60)
-        print(f"Total URLs crawled: {crawled_count}")
-        print(f"WARC file: {self.warc_filename}")
-        print(f"CDX file:  {self.cdx_filename}")
-        print("\nTo upload to Internet Archive:")
-        print("  1. Create an account at https://archive.org")
-        print("  2. Get API keys from https://archive.org/account/s3.php")
-        print(
+        self.logger.info("\n" + "=" * 60)
+        self.logger.info("Crawl completed!")
+        self.logger.info("=" * 60)
+        self.logger.info(f"Total URLs crawled: {crawled_count}")
+        self.logger.info(f"URLs skipped: {skipped_count}")
+        self.logger.info(f"Errors encountered: {error_count}")
+        self.logger.info(f"WARC file: {self.warc_filename}")
+        self.logger.info(f"CDX file:  {self.cdx_filename}")
+        self.logger.info(f"Log file:  {self.log_filename}")
+        self.logger.info("\nTo upload to Internet Archive:")
+        self.logger.info("  1. Create an account at https://archive.org")
+        self.logger.info("  2. Get API keys from https://archive.org/account/s3.php")
+        self.logger.info(
             f"  3. Use ia CLI: ia upload <identifier> {os.path.basename(self.warc_filename)}"
         )
-        print("\nOr use the web interface:")
-        print("  Upload WARC files at https://archive.org/upload/")
-        print("=" * 60 + "\n")
+        self.logger.info("\nOr use the web interface:")
+        self.logger.info("  Upload WARC files at https://archive.org/upload/")
+        self.logger.info("=" * 60 + "\n")
 
 
 def main():
