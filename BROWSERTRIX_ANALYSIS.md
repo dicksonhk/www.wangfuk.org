@@ -4,27 +4,69 @@ This document describes the analysis of the www.wangfuk.org crawl data from Brow
 
 ## Collection Information
 
-**Collection URL:** `https://app.browsertrix.com/api/orgs/a483ba90-1e46-462b-aa09-e91c2876bd0f/collections/www-wangfuk-org/public/replay.json`
+**Collection ID (UUID):** `00035ac5-46e8-400c-af27-1eb493c85ef4`  
+**Collection URL:** `https://app.browsertrix.com/api/orgs/a483ba90-1e46-462b-aa09-e91c2876bd0f/collections/00035ac5-46e8-400c-af27-1eb493c85ef4/public/replay.json`
 
 **Organization ID:** `a483ba90-1e46-462b-aa09-e91c2876bd0f`  
-**Collection Name:** `www-wangfuk-org`
+**Collection Name:** `www.wangfuk.org`  
+**Collection Slug:** `www-wangfuk-org`
 
 ## API Access Status
 
-The Browsertrix API endpoint provided returns a `422 Unprocessable Entity` error. This indicates:
+✅ **Successfully Accessed** - The collection is publicly accessible via the UUID-based endpoint.
 
-1. **Collection ID Format Issue**: The collection identifier `www-wangfuk-org` appears to be a slug/name rather than a UUID, but the API expects a UUID format for the collection ID.
+### Important Note on Collection IDs
 
-2. **Authentication Required**: The collection may not be publicly accessible, or the public API endpoint may require different authentication or URL structure.
+The API requires UUID-based collection IDs, not slugs:
+- ❌ Incorrect: `collections/www-wangfuk-org/public/replay.json` (slug)
+- ✅ Correct: `collections/00035ac5-46e8-400c-af27-1eb493c85ef4/public/replay.json` (UUID)
 
-3. **Alternative Access Methods**: The data may be accessible through:
-   - The Browsertrix web interface at https://app.browsertrix.com
-   - Downloading the WACZ file directly if available
-   - Using authenticated API calls with proper credentials
+## Analysis Results
 
-## What the Analysis Would Include
+The analysis tool successfully analyzed the complete www.wangfuk.org collection:
 
-If the Browsertrix `replay.json` endpoint were accessible, the analysis tool (`analyze_browsertrix.py`) would provide:
+### Collection Statistics
+
+- **Total Pages:** 944 pages (938 unique)
+- **Total Size:** 7.3 GB (7,328,996,543 bytes)
+- **Crawl Date:** December 5, 2025 (05:10-05:14 UTC)
+- **Crawl Duration:** ~4.5 minutes
+- **Homepage:** http://www.wangfuk.org/html/home/index.asp
+- **Access:** Public
+- **Download Available:** Yes
+
+### Content Breakdown
+
+**By Type:**
+- PDFs: 837 files (88.7%)
+- Videos (MP4): 63 files (6.7%)
+- HTML Pages: 28 files (3.0%)
+- Images (JPEG): 16 files (1.7%)
+
+**By Extension:**
+- .pdf: 840 files
+- .mp4: 63 files
+- .htm: 23 files
+- .jpg: 16 files
+- .asp: 2 files
+
+**HTTP Status:**
+- Success (200): 941 pages (99.7%)
+- Not Found (404): 3 pages (0.3%)
+
+### Domain Distribution
+
+- **www.wangfuk.org:** 944 pages (100%)
+
+### Time Range
+
+- **First Page:** 2025-12-05 05:10:17 UTC
+- **Last Page:** 2025-12-05 05:14:36 UTC
+- **Total Entries:** 944
+
+## Analysis Capabilities
+
+The analysis tool (`analyze_browsertrix.py`) provides:
 
 ### 1. Crawl Metadata
 - Collection name and description
@@ -100,25 +142,32 @@ pip install -r requirements-analysis.txt
 
 ### Usage
 
-#### With direct URL:
+#### Basic analysis (metadata only):
 ```bash
 python analyze_browsertrix.py "https://app.browsertrix.com/api/orgs/{org_id}/collections/{collection_id}/public/replay.json"
 ```
 
+#### Complete analysis with full page list:
+```bash
+python analyze_browsertrix.py {url} --fetch-pages --output report.txt
+```
+
 #### With org and collection parameters:
 ```bash
-python analyze_browsertrix.py --org {org_id} --collection {collection_id}
+python analyze_browsertrix.py --org {org_id} --collection {collection_id} --fetch-pages
 ```
 
 #### Generate JSON output:
 ```bash
-python analyze_browsertrix.py {url} --output report.txt --json analysis.json
+python analyze_browsertrix.py {url} --fetch-pages --output report.txt --json analysis.json
 ```
 
 #### Print to stdout:
 ```bash
 python analyze_browsertrix.py {url} --print
 ```
+
+**Note:** The `--fetch-pages` flag fetches the complete page list from the collection's `pagesQueryUrl`, providing detailed analysis of all crawled pages including URLs, content types, status codes, and file extensions. Without this flag, only collection metadata is analyzed.
 
 ## Alternative Analysis Methods
 
