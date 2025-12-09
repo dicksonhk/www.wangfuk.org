@@ -19,7 +19,7 @@ import json
 import sys
 from datetime import datetime
 from urllib.parse import urlparse
-from collections import Counter, defaultdict
+from collections import Counter
 import requests
 
 

@@ -140,15 +140,20 @@ wacz extract collection.wacz --output extracted/
 ```
 
 ### 3. Use Browsertrix API with Authentication
-If you have API credentials:
+If you have API credentials, use environment variables to avoid exposing them in shell history:
 ```bash
-# Login and get JWT token
-curl -X POST https://app.browsertrix.com/api/auth/jwt/login \
+# Set credentials as environment variables
+export BROWSERTRIX_USER="your_username"
+export BROWSERTRIX_PASS="your_password"
+
+# Login and get JWT token (credentials from environment)
+TOKEN=$(curl -X POST https://app.browsertrix.com/api/auth/jwt/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "user", "password": "pass"}'
+  -d "{\"username\": \"$BROWSERTRIX_USER\", \"password\": \"$BROWSERTRIX_PASS\"}" \
+  | jq -r '.access_token')
 
 # Use token to access collection
-curl -H "Authorization: Bearer {token}" \
+curl -H "Authorization: Bearer $TOKEN" \
   https://app.browsertrix.com/api/orgs/{org_id}/collections/{collection_id}
 ```
 
