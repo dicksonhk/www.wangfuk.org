@@ -162,7 +162,7 @@ with open('archive.warc.gz', 'wb') as output:
         payload=b'<html>...</html>',
         http_headers=http_headers,
         warc_headers_dict={
-            'WARC-Date': datetime.datetime.utcnow().isoformat() + 'Z'
+            'WARC-Date': datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
         }
     )
     
@@ -749,6 +749,7 @@ verify_wacz('example.wacz')
 ```python
 from warcio.warcwriter import WARCWriter
 from warcio.statusandheaders import StatusAndHeaders
+from urllib.parse import urlparse
 import requests
 import datetime
 import gzip
@@ -763,9 +764,10 @@ def archive_url(url, output_file):
         writer = WARCWriter(output, gzip=False)  # Already gzipped
         
         # Create request record
+        parsed_url = urlparse(url)
         req_headers = StatusAndHeaders(
             f'GET {url} HTTP/1.1',
-            [('Host', requests.utils.urlparse(url).netloc)],
+            [('Host', parsed_url.netloc)],
             protocol='HTTP/1.1'
         )
         
@@ -789,7 +791,7 @@ def archive_url(url, output_file):
             payload=response.content,
             http_headers=resp_headers,
             warc_headers_dict={
-                'WARC-Date': datetime.datetime.utcnow().isoformat() + 'Z'
+                'WARC-Date': datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
             }
         )
         writer.write_record(response_record)
